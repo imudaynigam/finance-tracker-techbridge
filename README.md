@@ -1,73 +1,73 @@
-# Welcome to your Lovable project
+Personal Finance Tracker
+A full stack web application to manage income, expenses, and view financial analytics. Built with React, Node.js, Express, PostgreSQL/MySQL, and Redis.
 
-## Project info
+Features
+User Authentication
+JWT-based authentication
+Role-Based Access Control (admin, user, read-only)
+Protected routes and conditional UI rendering
+Transaction Management
+Add, edit, delete, and categorize transactions (income/expense)
+Search and filter transactions
+Pagination and virtual scrolling for large lists
+Dashboard & Analytics
+Monthly/yearly spending overview
+Category-wise expense breakdown
+Income vs Expense trends
+Interactive charts (Pie, Line, Bar)
+Performance & Security
+Redis caching for analytics and category lists
+API rate limiting
+Protection against XSS and SQL Injection
 
-**URL**: https://lovable.dev/projects/4aa1e3c4-e1ee-41e2-a44a-532f92b1a0c6
+Tech Stack
+Frontend: React 18+, Vite, TypeScript, Chart.js/Recharts, Tailwind CSS
+Backend: Node.js, Express.js, TypeScript
+Database: PostgreSQL / MySQL
+Caching: Redis
+API Docs: Swagger / OpenAPI
 
-## How can I edit this code?
+Project Structure
+/frontend   # React app
+/backend    # Node.js + Express API
+/README.md  # Project overview and setup
 
-There are several ways of editing your application.
+Getting Started
+Prerequisites
+Node.js (v18+)
+npm or yarn
+PostgreSQL or MySQL
+Redis
 
-**Use Lovable**
+Setup
+1. Clone the repository
+git clone https://github.com/your-username/finance-tracker.git
+cd finance-tracker
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/4aa1e3c4-e1ee-41e2-a44a-532f92b1a0c6) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+2. Frontend
+cd frontend
+npm install
 npm run dev
-```
 
-**Edit a file directly in GitHub**
+3. Backend
+cd backend
+npm install
+npm run dev
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+4. Database
+Create a database in PostgreSQL/MySQL.
+Run migrations (see backend README or scripts).
 
-**Use GitHub Codespaces**
+API Documentation
+Swagger UI available at /api/docs when backend is running.
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Demo Credentials
+Role	Username	Password
+Admin	admin@demo.com	admin123
+User	user@demo.com	user123
+Read-only	view@demo.com	view123
 
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/4aa1e3c4-e1ee-41e2-a44a-532f92b1a0c6) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+Performance
+Analytics data cached for 15 minutes
+Category lists cached for 1 hour
+Rate limits: Auth (5/15min), Transactions (100/hr), Analytics (50/hr)
