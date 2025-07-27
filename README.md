@@ -75,7 +75,7 @@ Built with <strong>React</strong>, <strong>Node.js</strong>, <strong>Express</st
 
 <pre>
 1. Clone the repository
-   git clone https://github.com/imudaynigam/finance-tracker.git
+   git clone https://github.com/imudaynigam/finance-tracker-techbridge.git
    cd finance-tracker
 
 2. Frontend
@@ -90,13 +90,12 @@ Built with <strong>React</strong>, <strong>Node.js</strong>, <strong>Express</st
 
 4. Database
    - Create a database in PostgreSQL/MySQL
-   - Run migrations (see backend README or scripts)
 </pre>
 
 <hr>
 
 <h2>📘 API Documentation</h2>
-<p>Swagger UI available at: <a href="http://localhost:5000/api/docs">http://localhost:5000/api/docs</a></p>
+<p>Swagger UI available at: <a href="http://localhost:5000/api/docs">http://localhost:3001/api/docs</a></p>
 
 <hr>
 
