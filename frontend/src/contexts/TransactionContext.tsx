@@ -1,130 +1,244 @@
-import React, { createContext, useContext, useState, useCallback, useMemo, ReactNode } from 'react';
-
-export interface Transaction {
-  id: string;
-  type: 'income' | 'expense';
-  amount: number;
-  category: string;
-  description: string;
-  date: string;
-  userId: string;
-}
+import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect, useRef } from 'react';
+import { transactionsAPI, categoriesAPI } from '../services/api';
+import { useAuth } from './AuthContext';
 
 export interface Category {
-  id: string;
+  id: number;
   name: string;
+  description?: string;
+  color?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Transaction {
+  id: number;
+  amount: number | string; // Can be string from API or number after parsing
   type: 'income' | 'expense';
-  color: string;
+  description: string;
+  date: string;
+  userId: number;
+  categoryId: number;
+  category: Category;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TransactionFilters {
+  page?: number;
+  limit?: number;
+  type?: string;
+  categoryId?: number;
+  startDate?: string;
+  endDate?: string;
+  search?: string;
 }
 
 interface TransactionContextType {
   transactions: Transaction[];
   categories: Category[];
-  addTransaction: (transaction: Omit<Transaction, 'id'>) => void;
-  updateTransaction: (id: string, transaction: Partial<Transaction>) => void;
-  deleteTransaction: (id: string) => void;
-  getTransactionsByUser: (userId: string) => Transaction[];
-  getTotalIncome: (userId: string) => number;
-  getTotalExpenses: (userId: string) => number;
-  getNetBalance: (userId: string) => number;
-  getCategoryBreakdown: (userId: string, type: 'income' | 'expense') => Record<string, number>;
+  loading: boolean;
+  error: string | null;
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  };
+  fetchTransactions: (filters?: TransactionFilters) => Promise<void>;
+  fetchAllTransactions: () => Promise<void>;
+  fetchCategories: () => Promise<void>;
+  createTransaction: (data: {
+    amount: number;
+    type: 'income' | 'expense';
+    description: string;
+    date: string;
+    categoryId: number;
+  }) => Promise<{ success: boolean; error?: string }>;
+  updateTransaction: (id: number, data: {
+    amount?: number;
+    type?: 'income' | 'expense';
+    description?: string;
+    date?: string;
+    categoryId?: number;
+  }) => Promise<{ success: boolean; error?: string }>;
+  deleteTransaction: (id: number) => Promise<{ success: boolean; error?: string }>;
+  clearError: () => void;
 }
 
 const TransactionContext = createContext<TransactionContextType | null>(null);
-
-// Mock categories
-const mockCategories: Category[] = [
-  { id: '1', name: 'Salary', type: 'income', color: '#22c55e' },
-  { id: '2', name: 'Freelance', type: 'income', color: '#16a34a' },
-  { id: '3', name: 'Investment', type: 'income', color: '#15803d' },
-  { id: '4', name: 'Food', type: 'expense', color: '#ef4444' },
-  { id: '5', name: 'Transport', type: 'expense', color: '#f97316' },
-  { id: '6', name: 'Entertainment', type: 'expense', color: '#8b5cf6' },
-  { id: '7', name: 'Shopping', type: 'expense', color: '#ec4899' },
-  { id: '8', name: 'Bills', type: 'expense', color: '#6b7280' },
-  { id: '9', name: 'Healthcare', type: 'expense', color: '#06b6d4' },
-];
-
-// Mock transactions
-const mockTransactions: Transaction[] = [
-  { id: '1', type: 'income', amount: 5000, category: 'Salary', description: 'Monthly salary', date: '2024-01-15', userId: '1' },
-  { id: '2', type: 'expense', amount: 120, category: 'Food', description: 'Grocery shopping', date: '2024-01-16', userId: '1' },
-  { id: '3', type: 'expense', amount: 50, category: 'Transport', description: 'Gas refill', date: '2024-01-17', userId: '1' },
-  { id: '4', type: 'income', amount: 3500, category: 'Salary', description: 'Monthly salary', date: '2024-01-15', userId: '2' },
-  { id: '5', type: 'expense', amount: 80, category: 'Food', description: 'Dinner out', date: '2024-01-18', userId: '2' },
-  { id: '6', type: 'expense', amount: 200, category: 'Shopping', description: 'New clothes', date: '2024-01-19', userId: '2' },
-  { id: '7', type: 'income', amount: 2500, category: 'Salary', description: 'Monthly salary', date: '2024-01-15', userId: '3' },
-  { id: '8', type: 'expense', amount: 60, category: 'Food', description: 'Lunch', date: '2024-01-20', userId: '3' },
-];
 
 interface TransactionProviderProps {
   children: ReactNode;
 }
 
 export const TransactionProvider: React.FC<TransactionProviderProps> = ({ children }) => {
-  const [transactions, setTransactions] = useState<Transaction[]>(mockTransactions);
-  const categories = mockCategories;
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    pages: 0,
+  });
+  
+  const hasInitialized = useRef(false);
 
-  const addTransaction = useCallback((transaction: Omit<Transaction, 'id'>) => {
-    const newTransaction = {
-      ...transaction,
-      id: Date.now().toString(),
-    };
-    setTransactions(prev => [newTransaction, ...prev]);
-  }, []);
-
-  const updateTransaction = useCallback((id: string, updatedTransaction: Partial<Transaction>) => {
-    setTransactions(prev => 
-      prev.map(t => t.id === id ? { ...t, ...updatedTransaction } : t)
-    );
-  }, []);
-
-  const deleteTransaction = useCallback((id: string) => {
-    setTransactions(prev => prev.filter(t => t.id !== id));
-  }, []);
-
-  const getTransactionsByUser = useCallback((userId: string) => {
-    return transactions.filter(t => t.userId === userId);
-  }, [transactions]);
-
-  const getTotalIncome = useMemo(() => (userId: string) => {
-    return transactions
-      .filter(t => t.userId === userId && t.type === 'income')
-      .reduce((sum, t) => sum + t.amount, 0);
-  }, [transactions]);
-
-  const getTotalExpenses = useMemo(() => (userId: string) => {
-    return transactions
-      .filter(t => t.userId === userId && t.type === 'expense')
-      .reduce((sum, t) => sum + t.amount, 0);
-  }, [transactions]);
-
-  const getNetBalance = useMemo(() => (userId: string) => {
-    return getTotalIncome(userId) - getTotalExpenses(userId);
-  }, [getTotalIncome, getTotalExpenses]);
-
-  const getCategoryBreakdown = useMemo(() => (userId: string, type: 'income' | 'expense') => {
-    const userTransactions = transactions.filter(t => t.userId === userId && t.type === type);
-    const breakdown: Record<string, number> = {};
+  const fetchTransactions = useCallback(async (filters?: TransactionFilters) => {
+    if (!isAuthenticated) return;
     
-    userTransactions.forEach(t => {
-      breakdown[t.category] = (breakdown[t.category] || 0) + t.amount;
-    });
+    setLoading(true);
+    setError(null);
     
-    return breakdown;
-  }, [transactions]);
+    try {
+      const response = await transactionsAPI.getAll(filters);
+      setTransactions(response.data.transactions || []);
+      setPagination(response.data.pagination || {
+        page: 1,
+        limit: 10,
+        total: 0,
+        pages: 0,
+      });
+    } catch (error: any) {
+      console.error('Fetch transactions error:', error);
+      const errorMessage = error.response?.data?.message || 'Failed to fetch transactions';
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  }, [isAuthenticated]);
+
+  const fetchAllTransactions = useCallback(async () => {
+    if (!isAuthenticated) return;
+    
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Fetch all transactions without pagination for analytics
+      const response = await transactionsAPI.getAllForAnalytics();
+      setTransactions(response.data.transactions || []);
+      setPagination({
+        page: 1,
+        limit: response.data.transactions?.length || 0,
+        total: response.data.transactions?.length || 0,
+        pages: 1,
+      });
+    } catch (error: any) {
+      console.error('Fetch all transactions error:', error);
+      const errorMessage = error.response?.data?.message || 'Failed to fetch transactions';
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  }, [isAuthenticated]);
+
+  const fetchCategories = useCallback(async () => {
+    if (!isAuthenticated) return;
+    
+    try {
+      const response = await categoriesAPI.getAll();
+      setCategories(response.data.categories || []);
+    } catch (error: any) {
+      console.error('Failed to fetch categories:', error);
+      // Set default categories if API fails
+      setCategories([
+        { id: 1, name: 'Salary', description: 'Income from salary', color: '#22c55e', isActive: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+        { id: 2, name: 'Food', description: 'Food and dining expenses', color: '#ef4444', isActive: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+        { id: 3, name: 'Transport', description: 'Transportation costs', color: '#f97316', isActive: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
+      ]);
+    }
+  }, [isAuthenticated]);
+
+  const createTransaction = useCallback(async (data: {
+    amount: number;
+    type: 'income' | 'expense';
+    description: string;
+    date: string;
+    categoryId: number;
+  }): Promise<{ success: boolean; error?: string }> => {
+    try {
+      await transactionsAPI.create(data);
+      // Refresh transactions list with all transactions for real-time updates
+      await fetchAllTransactions();
+      return { success: true };
+    } catch (error: any) {
+      console.error('Create transaction error:', error);
+      const errorMessage = error.response?.data?.message || 'Failed to create transaction';
+      return { success: false, error: errorMessage };
+    }
+  }, [fetchAllTransactions]);
+
+  const updateTransaction = useCallback(async (id: number, data: {
+    amount?: number;
+    type?: 'income' | 'expense';
+    description?: string;
+    date?: string;
+    categoryId?: number;
+  }): Promise<{ success: boolean; error?: string }> => {
+    try {
+      await transactionsAPI.update(id, data);
+      // Refresh transactions list with all transactions for real-time updates
+      await fetchAllTransactions();
+      return { success: true };
+    } catch (error: any) {
+      console.error('Update transaction error:', error);
+      const errorMessage = error.response?.data?.message || 'Failed to update transaction';
+      return { success: false, error: errorMessage };
+    }
+  }, [fetchAllTransactions]);
+
+  const deleteTransaction = useCallback(async (id: number): Promise<{ success: boolean; error?: string }> => {
+    try {
+      await transactionsAPI.delete(id);
+      // Refresh transactions list with all transactions for real-time updates
+      await fetchAllTransactions();
+      return { success: true };
+    } catch (error: any) {
+      console.error('Delete transaction error:', error);
+      const errorMessage = error.response?.data?.message || 'Failed to delete transaction';
+      return { success: false, error: errorMessage };
+    }
+  }, [fetchAllTransactions]);
+
+  const clearError = useCallback(() => {
+    setError(null);
+  }, []);
+
+  // Load initial data when user is authenticated
+  useEffect(() => {
+    if (authLoading) return; // Wait for auth to finish loading
+    
+    if (isAuthenticated && user) {
+      console.log('User authenticated, fetching transaction data...');
+      fetchCategories();
+      // Fetch all transactions for dashboard charts and analytics
+      fetchAllTransactions();
+    } else {
+      // Clear data when user is not authenticated
+      setTransactions([]);
+      setCategories([]);
+      setError(null);
+    }
+  }, [isAuthenticated, user, authLoading, fetchCategories, fetchAllTransactions]);
 
   const value: TransactionContextType = {
     transactions,
     categories,
-    addTransaction,
+    loading,
+    error,
+    pagination,
+    fetchTransactions,
+    fetchAllTransactions,
+    fetchCategories,
+    createTransaction,
     updateTransaction,
     deleteTransaction,
-    getTransactionsByUser,
-    getTotalIncome,
-    getTotalExpenses,
-    getNetBalance,
-    getCategoryBreakdown,
+    clearError,
   };
 
   return (

@@ -1,90 +1,71 @@
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import { 
-  LayoutDashboard, 
-  CreditCard, 
-  BarChart3, 
-  Settings,
-  Users
-} from 'lucide-react';
+import { NavLink } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { cn } from '@/lib/utils';
+import { Home, BarChart2, Settings, Users, LogOut, CreditCard, Eye } from 'lucide-react';
 
-interface SidebarProps {
-  activeTab: string;
-  onTabChange: (tab: string) => void;
-}
-
-const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
-  const { hasPermission } = useAuth();
-
-  const menuItems = [
-    {
-      id: 'dashboard',
-      label: 'Dashboard',
-      icon: LayoutDashboard,
-      permission: 'read',
-    },
-    {
-      id: 'transactions',
-      label: 'Transactions',
-      icon: CreditCard,
-      permission: 'read',
-    },
-    {
-      id: 'analytics',
-      label: 'Analytics',
-      icon: BarChart3,
-      permission: 'read',
-    },
-    {
-      id: 'settings',
-      label: 'Settings',
-      icon: Settings,
-      permission: 'read',
-    },
+const Sidebar: React.FC = () => {
+  const { user, logout } = useAuth();
+  const navItems = [
+    { to: '/', label: 'Dashboard', icon: Home },
   ];
-
-  // Add admin-only items
-  if (hasPermission('admin')) {
-    menuItems.push({
-      id: 'users',
-      label: 'User Management',
-      icon: Users,
-      permission: 'admin',
-    });
+  
+  // Add transactions for regular users and read-only users
+  if (user?.role === 'user' || user?.role === 'read-only') {
+    navItems.push({ to: '/transactions', label: 'Transactions', icon: CreditCard });
+  }
+  
+  navItems.push(
+    { to: '/analytics', label: 'Analytics', icon: BarChart2 },
+    { to: '/settings', label: 'Settings', icon: Settings }
+  );
+  
+  if (user?.role === 'admin') {
+    navItems.push({ to: '/admin', label: 'Admin', icon: Users });
   }
 
   return (
-    <div className="w-64 bg-card border-r border-border h-full">
-      <div className="p-6">
-        <nav className="space-y-2">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeTab === item.id;
-            
-            if (!hasPermission(item.permission as 'read' | 'write' | 'admin')) {
-              return null;
+    <aside className="h-full w-56 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col py-6 px-3 gap-2 font-sans">
+      {/* Read-Only Indicator */}
+      {user?.role === 'read-only' && (
+        <div className="mb-4 px-3 py-2 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+          <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
+            <Eye className="w-4 h-4" />
+            <span className="text-xs font-medium">Read-Only Mode</span>
+          </div>
+        </div>
+      )}
+      
+      <nav className="flex-1 flex flex-col gap-1">
+        {navItems.map(({ to, label, icon: Icon }) => (
+          <NavLink
+            key={to}
+            to={to}
+            className={({ isActive }) =>
+              cn(
+                'flex items-center gap-3 px-4 py-2 rounded-lg transition-colors font-medium text-base',
+                isActive
+                  ? 'bg-primary/10 text-primary border-l-4 border-primary shadow-sm'
+                  : 'text-muted-foreground hover:bg-muted/50'
+              )
             }
-
-            return (
-              <Button
-                key={item.id}
-                variant={isActive ? 'secondary' : 'ghost'}
-                className={cn(
-                  'w-full justify-start',
-                  isActive && 'bg-primary/10 text-primary'
-                )}
-                onClick={() => onTabChange(item.id)}
-              >
-                <Icon className="mr-3 h-4 w-4" />
-                {item.label}
-              </Button>
-            );
-          })}
-        </nav>
-      </div>
-    </div>
+          >
+            <Icon className="w-5 h-5" />
+            <span>{label}</span>
+            {user?.role === 'read-only' && label === 'Transactions' && (
+              <Eye className="w-3 h-3 ml-auto text-blue-500" />
+            )}
+          </NavLink>
+        ))}
+      </nav>
+      <button
+        onClick={logout}
+        className="mt-4 flex items-center gap-2 px-4 py-2 rounded-lg text-destructive hover:bg-destructive/10 font-medium text-base transition-colors"
+      >
+        <LogOut className="w-5 h-5" />
+        Logout
+      </button>
+    </aside>
   );
 };
 

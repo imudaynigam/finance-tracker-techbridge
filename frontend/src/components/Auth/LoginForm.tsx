@@ -20,8 +20,8 @@ const LoginForm: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const success = await login(email, password);
-      if (success) {
+      const result = await login(email, password);
+      if (result.success) {
         toast({
           title: "Login successful",
           description: "Welcome back to FinanceTracker!",
@@ -29,7 +29,7 @@ const LoginForm: React.FC = () => {
       } else {
         toast({
           title: "Login failed",
-          description: "Invalid email or password. Please try again.",
+          description: result.error || "Invalid email or password. Please try again.",
           variant: "destructive",
         });
       }
@@ -45,9 +45,9 @@ const LoginForm: React.FC = () => {
   }, [email, password, login, toast]);
 
   const demoCredentials = [
-    { role: 'Admin', email: 'admin@finance.com', description: 'Full access to all features' },
-    { role: 'User', email: 'user@finance.com', description: 'Can manage own transactions' },
-    { role: 'Read-only', email: 'readonly@finance.com', description: 'View-only access' },
+    { role: 'Admin', email: 'admin@demo.com', password: 'admin123', description: 'Full access to all features' },
+    { role: 'User', email: 'user@demo.com', password: 'user123', description: 'Can manage own transactions' },
+    { role: 'Read-only', email: 'view@demo.com', password: 'view123', description: 'View-only access' },
   ];
 
   return (
@@ -124,7 +124,7 @@ const LoginForm: React.FC = () => {
           <CardHeader>
             <CardTitle className="text-sm">Demo Credentials</CardTitle>
             <CardDescription className="text-xs">
-              Use these credentials to test different user roles (password: password123)
+              Use these credentials to test different user roles
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -135,7 +135,7 @@ const LoginForm: React.FC = () => {
                   className="p-3 border border-border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
                   onClick={() => {
                     setEmail(cred.email);
-                    setPassword('password123');
+                    setPassword(cred.password);
                   }}
                 >
                   <div className="flex items-center justify-between">

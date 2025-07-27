@@ -5,12 +5,11 @@ import { useTransactions } from '@/contexts/TransactionContext';
 
 const TrendChart: React.FC = () => {
   const { user } = useAuth();
-  const { getTransactionsByUser } = useTransactions();
+  const { transactions } = useTransactions();
 
   const chartData = useMemo(() => {
     if (!user) return [];
 
-    const transactions = getTransactionsByUser(user.id);
     const monthlyData: Record<string, { income: number; expenses: number; month: string }> = {};
 
     transactions.forEach(transaction => {
@@ -30,7 +29,7 @@ const TrendChart: React.FC = () => {
     });
 
     return Object.values(monthlyData).sort((a, b) => a.month.localeCompare(b.month));
-  }, [user, getTransactionsByUser]);
+  }, [user, transactions]);
 
   if (chartData.length === 0) {
     return (
