@@ -31,10 +31,9 @@ if (dbType === 'mysql') {
       connectionLimit: 10,
       connectTimeout: 30000, // 30 seconds
       acquireTimeout: 30000,
+      enableKeepAlive: true,
+      keepAliveInitialDelay: 10000
     },
-    connectTimeout: 30000,
-    retryAttempts: 3,
-    retryDelay: 3000,
   });
   console.log('🗄️ Using MySQL database');
 } else if (dbType === 'postgres') {
