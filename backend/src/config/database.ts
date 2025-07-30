@@ -28,12 +28,9 @@ if (dbType === 'mysql') {
     charset: 'utf8mb4',
     timezone: 'Z',
     extra: {
-      connectionLimit: 10,
-      connectTimeout: 30000, // 30 seconds
-      acquireTimeout: 30000,
-      enableKeepAlive: true,
-      keepAliveInitialDelay: 10000
+      connectionLimit: 10
     },
+    connectTimeout: 30000,
   });
   console.log('🗄️ Using MySQL database');
 } else if (dbType === 'postgres') {
