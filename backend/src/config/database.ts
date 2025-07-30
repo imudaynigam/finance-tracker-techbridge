@@ -29,7 +29,12 @@ if (dbType === 'mysql') {
     timezone: 'Z',
     extra: {
       connectionLimit: 10,
+      connectTimeout: 30000, // 30 seconds
+      acquireTimeout: 30000,
     },
+    connectTimeout: 30000,
+    retryAttempts: 3,
+    retryDelay: 3000,
   });
   console.log('🗄️ Using MySQL database');
 } else if (dbType === 'postgres') {

@@ -18,6 +18,11 @@ import { generalLimiter } from './middleware/rateLimiter';
 import { cacheService } from './utils/cache';
 
 // Export AppDataSource for use in controllers
+
+// Health check endpoint for Railway
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'healthy', timestamp: new Date().toISOString() });
+});
 export { AppDataSource };
 
 // Load environment variables
