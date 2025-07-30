@@ -17,24 +17,11 @@ import adminRoutes from './routes/admin';
 import { generalLimiter } from './middleware/rateLimiter';
 import { cacheService } from './utils/cache';
 
+// Export AppDataSource for use in controllers
+export { AppDataSource };
+
 // Load environment variables
 config();
-
-// Create Express app
-const app = express();
-
-// Apply middleware
-app.use(cors());
-app.use(helmet());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'healthy', timestamp: new Date().toISOString() });
-});
-
-export { AppDataSource };
 
 const app = express();
 const PORT = process.env.PORT || 5000;
